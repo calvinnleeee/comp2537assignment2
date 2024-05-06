@@ -53,13 +53,15 @@ app.use(session({
 // or a welcome message if logged in
 app.get('/', (req, res) => {
   // if user is not logged in: display this
-  if (!req.session.authenticated) {
-    res.render("home");
-  }
-  // if user is logged in: redirect to memebers
-  else {
-    res.redirect(`/members`);
-  };
+  // if (!req.session.authenticated) {
+  //   res.render("home");
+  // }
+  // // if user is logged in: redirect to memebers
+  // else {
+  //   res.redirect(`/members`);
+  // };
+
+  res.render("home", { loggedIn: req.session.authenticated, name: req.session.name })
 });
 
 // 2. Sign up page - form for user to sign up
@@ -85,15 +87,26 @@ app.post('/signupSubmit', async (req, res) => {
   if (validationResult.error != null) {
     if (!name) {
       res.render("signupFail", {field: "Name"});
+      return;
     }
     else if (!email) {
       res.render("signupFail", {field: "Email"});
+      return;
     }
     else if (!pw) {
       res.render("signupFail", {field: "Password"});
+      return;
     }
   }
-  
+  // check if email already exists in the database
+  const result = await userCollection.countDocuments({email: email});
+
+  // a user document with that email exists, sign up failed
+  if (result > 0) {
+    res.render("userExists");
+    return;
+  }
+
   // add name, email. and bcrypted hashed password as user to db
   // then create a session and redirect user to /members page
   var hashedPw = await bcrypt.hash(pw, saltRounds);
@@ -167,6 +180,10 @@ app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect(`/`);
   return;
+});
+
+app.get('/admin', (req, res) =>{
+  
 });
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

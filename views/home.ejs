@@ -1,6 +1,12 @@
 <%- include("templates/header") %>
 
-<a href="/signup"><button>Sign up</button></a><br/>
-<a href="/login"><button>Log in</button></a>
+<% if (loggedIn) { %>
+  <p>Hello, <%= name %>!</p>
+  <%- include("buttons/members") %><br/>
+  <%- include("buttons/signout") %>
+<% } else { %>
+  <%- include("buttons/signup") %>
+  <%- include("buttons/login") %>
+<% } %>
 
 <%- include("templates/footer") %>
