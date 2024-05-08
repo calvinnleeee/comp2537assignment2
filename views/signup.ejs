@@ -1,11 +1,28 @@
 <%- include("templates/header") %>
 
-<p>Create a new user</p>
-<form method="post" action="/signupSubmit">
-<input type="text" placeholder="name" name="name"/><br/>
-<input type="email" placeholder="email" name="email"/><br/>
-<input type="password" placeholder="password" name="password"/><br/>
-<input type="submit" value="Submit"/>
-</form>
+<div class="container text-center">
+
+  <h2>Create a new user</h2>
+  <br/>
+  <form method="post" action="/signupSubmit">
+    <div class="container" style="width: 400px; max-width: 80vw;">
+    <div class="mb-3">
+      <label for="name" class="form-label">Your name</label>
+      <input type="text" class="form-control" id="name" name="name" placeholder="ex. Lindsay Lohan">
+    </div>
+    <div class="mb-3">
+      <label for="email" class="form-label">Your email address</label>
+      <input type="email" class="form-control" id="email" name="email" placeholder="ex. fakeemail@yahoo.com">
+    </div>
+    <div class="mb-3">
+      <label for="password" class="form-label">Your password</label>
+      <input type="password" class="form-control" id="password" name="password">
+    </div>
+    <br/>
+    <input class="btn btn-primary" type="submit" value="Submit"/>
+   </div>
+  </form>
+
+</div>
 
 <%- include("templates/footer") %>

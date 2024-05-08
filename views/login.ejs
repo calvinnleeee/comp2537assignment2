@@ -1,10 +1,24 @@
 <%- include("templates/header") %>
 
-<p>Log in</p> 
-<form method="post" action="/loginSubmit">
-<input type="text" placeholder="email" name="email"/><br/>
-<input type="password" placeholder="password" name="password"/><br/>
-<input type="submit" value="Login"/>
-</form>
+<div class="container text-center">
+
+  <h2>Log in</h2>
+  <br/>
+  <form method="post" action="/loginSubmit">
+    <div class="container" style="width: 400px; max-width: 80vw;">
+      <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input type="email" class="form-control" name="email" id="email">
+      </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input type="password" class="form-control" name="password" id="password">
+      </div>
+      <br/>
+      <input class="btn btn-primary" type="submit" value="Login"/>
+     </div>
+  </form>
+
+</div>
 
 <%- include("templates/footer") %>

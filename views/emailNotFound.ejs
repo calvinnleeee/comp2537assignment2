@@ -1,6 +1,8 @@
 <%- include("templates/header") %>
 
-<p>That email was not found.</p>
-<a href="/login">Try again</a>
+<div class="container text-center">
+  <p>That email was not found.</p>
+  <%- include("buttons/login", {text: "Try again"}) %>
+</div>
 
 <%- include("templates/footer") %>

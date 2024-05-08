@@ -21,7 +21,7 @@ app.use(express.urlencoded({extended: false}));
 app.use(express.static(__dirname + "/public"));
 app.set('view engine', 'ejs');
 
-// Databsase secrets, .env imports
+// Databsase secrets, .env imports, mongo things
 const expireTime = 1000 * 60 * 60;    // 1000 ms/s * 60 s/min * 60 min/hr
 const mongodb_host = process.env.MONGODB_HOST;
 const mongodb_user = process.env.MONGODB_USER;
@@ -41,6 +41,7 @@ var mongoStore = MongoStore.create({
 	}
 });
 
+// Cookies
 app.use(session({ 
   secret: node_session_secret,
   store: mongoStore, //default is memory store 
@@ -48,28 +49,24 @@ app.use(session({
   resave: true
 }));
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Root/index page
 
-// 1. home page - displays links for signup/login if user is not logged in,
-// or a welcome message if logged in
+app.use('/', setupHeader);
+app.get('/home', (req, res) => {
+  res.redirect('/');
+});
 app.get('/', (req, res) => {
-  // if user is not logged in: display this
-  // if (!req.session.authenticated) {
-  //   res.render("home");
-  // }
-  // // if user is logged in: redirect to memebers
-  // else {
-  //   res.redirect(`/members`);
-  // };
-
   res.render("home", { loggedIn: req.session.authenticated, name: req.session.name })
 });
 
-// 2. Sign up page - form for user to sign up
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Signup page and submission
+
 app.get('/signup', (req, res) => {
   res.render("signup");
 });
 
-// post method to handle signup submission
 app.post('/signupSubmit', async (req, res) => {
   var name = req.body.name;
   var email = req.body.email;
@@ -110,7 +107,7 @@ app.post('/signupSubmit', async (req, res) => {
   // add name, email. and bcrypted hashed password as user to db
   // then create a session and redirect user to /members page
   var hashedPw = await bcrypt.hash(pw, saltRounds);
-  await userCollection.insertOne({username: name, email: email, password: hashedPw});
+  await userCollection.insertOne({username: name, email: email, password: hashedPw, role: "user"});
 
   req.session.authenticated = true;
   req.session.name = name;
@@ -119,7 +116,9 @@ app.post('/signupSubmit', async (req, res) => {
   return;
 });
 
-// 3. Log in page - user can log in with email and password
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Login page and submission
+
 app.get('/login', (req, res) => {
   res.render("login");
 });
@@ -130,7 +129,7 @@ app.post('/loginSubmit', async (req, res) => {
   var pw = req.body.password;
 
   const schema = Joi.object({
-    email:  Joi.string().email({minDomainSegments: 2, tlds: { allow: ['com', 'org', 'net']}}).required(),
+    email:  Joi.string().email({minDomainSegments: 2, tlds:{ allow: ['com', 'org', 'net', 'ca']}}).required(),
     pw:     Joi.string().max(20).required()
   });
   const validationResult = schema.validate({email, pw});
@@ -140,7 +139,7 @@ app.post('/loginSubmit', async (req, res) => {
     return;
   }
 
-  const result = await userCollection.find({email: email}).project({username: 1, password: 1, _id: 1}).toArray();
+  const result = await userCollection.find({email: email}).project({username: 1, password: 1, role: 1}).toArray();
 
   // check if email is found
 	if (result.length != 1) {
@@ -151,8 +150,9 @@ app.post('/loginSubmit', async (req, res) => {
 		// correct password, store user's name in session, log the user in and redirect to /members
 		req.session.authenticated = true;
 		req.session.name = result[0].username;
+    req.session.role = result[0].role;
 		req.session.cookie.maxAge = expireTime;
-		res.redirect('/members');
+		res.redirect("/members");
 		return;
 	}
 	else {
@@ -161,13 +161,16 @@ app.post('/loginSubmit', async (req, res) => {
 	}
 });
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Members page
+
 app.get('/members', (req, res) => {
   // if user has a valid session, say hello and name of user
   if (req.session.authenticated) {
     // display random image from selection of 3 images, stored in /public folder of server
     var rnd = Math.floor(Math.random() * 3) + 1;
     var name = req.session.name;
-    res.render("members", { name: name, random: rnd });
+    res.render("members", { name: name });
   }
   // if user has no session, redirect to home page
   else {
@@ -176,17 +179,84 @@ app.get('/members', (req, res) => {
   }
 });
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Admin page
+
+app.get('/admin', async (req, res) => {
+  // if they are not logged in, redirect to login page
+  if (!req.session.authenticated) {
+    res.redirect("/login");
+    return;
+  }
+
+  // if the user is not an admin, display error message with status code 403
+  if (req.session.role == "user") {
+    res.status(403);
+    res.render("admin", { role: "user" });
+    return;
+  }
+  // if the user is an admin, show all users and their type
+  // for each user, provide a link to promote them to admin or demote them to regular user
+  else {
+    const users = await userCollection.find().project({username: 1, email: 1, role: 1}).toArray();
+    var usrEmail = req.query.email;
+    var action = req.query.action;
+
+    // check for a valid action (promote/demote), email not empty, and user is admin
+    if (!usrEmail || !action || req.session.role != "admin") {
+      res.render("admin", { role: "admin", users: users });
+      return;
+    }
+
+    const userToUpdate = await userCollection.find({ email: usrEmail}).project({username: 1, role: 1}).toArray();
+
+    if (userToUpdate.length == 0) { 
+      res.render("/admin", { role: "admin", users: users });
+      return;
+    }
+  
+    // if user is already admin, let the user know
+    if (action == "promote") {
+      if (userToUpdate[0].role == "admin") {
+        console.log("That person is already an admin.");
+        res.redirect("/admin");
+        return;
+      }
+      else {
+        await userCollection.updateOne({email: usrEmail}, {$set: {role: "admin"}});
+        console.log("Successfully promoted " + userToUpdate[0].username + " to admin.");
+        res.redirect("/admin");
+        return;
+      }
+    }
+    else { // if action is demote
+      if (userToUpdate[0].role == "user") {
+        console.log("That person is already a user.");
+        res.redirect("/admin");
+        return;
+      }
+      else {
+        await userCollection.updateOne({email: usrEmail}, {$set: {role: "user"}});
+        console.log("Successfully demoted " + userToUpdate[0].username + " to user.");
+        res.redirect("/admin");
+        return;
+      }
+    }
+  }
+
+});
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// User log-out
+
 app.get('/logout', (req, res) => {
   req.session.destroy();
   res.redirect(`/`);
   return;
 });
 
-app.get('/admin', (req, res) =>{
-  
-});
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Handle non-existent pages (404)
 
 app.get('*', (req, res) => {
   res.status(404);
@@ -196,3 +266,18 @@ app.get('*', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Helper functions
+
+var nav = [
+  ["Home", "/"],
+  ["Members", "/members"]
+];
+
+function setupHeader(req, res, next) {
+  app.locals.navLinks = nav;
+  let str = req.originalUrl.split('/');
+  app.locals.currentUrl = str[1];
+  next();
+}

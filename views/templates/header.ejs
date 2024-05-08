@@ -11,3 +11,29 @@
 </head>
 
 <body>
+
+  <div class="container">
+    <header class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between py-3 mb-4 border-bottom">
+      <ul class="nav mx-auto mb-2 justify-content-center mb-md-0">
+        <% for (let i = 0; i < locals.navLinks.length; i++) { %>
+          <li><a href=<%= locals.navLinks[i][1] %>
+            class="mx-2 btn nav-link px-2
+            <% if ((locals.currentUrl == "" && locals.navLinks[i][0] == "Home") || locals.currentUrl == locals.navLinks[i][0].toLowerCase()) { %>
+              btn-primary active
+            <% } %>"
+            role="button"><%= locals.navLinks[i][0] %></a></li>
+        <% } %>
+
+        <!-- <li><a href="/" class="nav-link px-2 link-secondary">Home</a></li>
+        <li><a href="#" class="btn-primary active nav-link px-2">Features</a></li> -->
+        
+      </ul>
+
+      <!-- <div class="col-md-3 text-end">
+        <a class="btn btn-secondary" role="button" href="/login">Log in</a>
+        <a class="btn btn-primary" role="button" href="/signup">Sign up</a>
+      </div> -->
+    </header>
+  </div>
+
+  <div class="container">

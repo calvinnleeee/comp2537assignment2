@@ -1,12 +1,16 @@
 <%- include("templates/header") %>
 
+<div class="col-lg-6 col-l-4 my-5 mx-auto">
+  <div class="d-grid gap-2 text-center">
 <% if (loggedIn) { %>
   <p>Hello, <%= name %>!</p>
-  <%- include("buttons/members") %><br/>
+  <%- include("buttons/members") %>
   <%- include("buttons/signout") %>
 <% } else { %>
   <%- include("buttons/signup") %>
-  <%- include("buttons/login") %>
+  <%- include("buttons/login", {text: "Log in"}) %>
 <% } %>
+  </div>
+</div>
 
 <%- include("templates/footer") %>

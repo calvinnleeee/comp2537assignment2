@@ -1,0 +1,28 @@
+<%- include("templates/header") %>
+
+<div class="container text-center">
+  <%# if the user's role is user, show an error message %>
+  <% if (role == "user") { %>
+    <h2>You are not authorized to access this page!</h2>
+  <% } else { %>
+    <%# access users with user.username or user.role %>
+    <% for(let i = 0; i < users.length; i++) { %>
+      <% const promoStr = "/admin?email=" + encodeURI(users[i].email) + "&action=promote"; %>
+      <% const demoteStr = "/admin?email=" + encodeURI(users[i].email) + "&action=demote"; %>
+      <div class="row align-items-start mb-4">
+        <div class="col">
+          <%= users[i].username %> (<%= users[i].role %>)
+        </div>
+        <div class="col">
+          <a class="btn btn-danger rounded-pill px-3" type="button" href=<%=promoStr%>>Promote to Admin</a>
+        </div>
+        <div class="col">
+          <a class="btn btn-success rounded-pill px-3" type="button" href=<%=demoteStr%>>Demote to User</a>
+        </div>
+      </div>
+    <% } %>
+    
+  <% } %>
+</div>
+
+<%- include("templates/footer") %>

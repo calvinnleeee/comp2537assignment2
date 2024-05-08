@@ -1,7 +1,13 @@
 <%- include("templates/header") %>
 
-<h1>Hello, <%- name %>!</h1><br/><br/>
-<img src="/<%- random %>.jpg"><br/>
-<%- include("buttons/signout") %>
+<div class="container text-center">
+  <h1>Hello, <%- name %>!</h1><br/>
+  <div class="container row mb-3 text-center">
+    <div class="col-md-4 themed-grid-col"><img class="img-fluid" src="/1.jpg"></div>
+    <div class="col-md-4 themed-grid-col"><img class="img-fluid" src="/2.jpg"></div>
+    <div class="col-md-4 themed-grid-col"><img class="img-fluid" src="/3.jpg"></div>
+  </div>
+  <%- include("buttons/signout") %>
+</div>
 
 <%- include("templates/footer") %>
